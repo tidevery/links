@@ -2,9 +2,9 @@
 <html>
 
   <head>
-      <title>Links</title>
-      <script src="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.js"></script>
-      <link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.css" />
+    <title>Links</title>
+    <script src="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.js"></script>
+    <link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.css" />
   </head>
 
   <body>
@@ -16,6 +16,9 @@
       Welcome!
 
       <button id="logout" onclick="auth.signOut()">Logout</button>
+    </div>
+
+    <div id="db" style="display: none">
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/5.9.2/firebase-app.js"></script>
@@ -35,23 +38,39 @@
 
       // Initialize Cloud Firestore through Firebase
       var db = firebase.firestore();
-      db.collection("users").add({
-        first: "Ada",
-        last: "Lovelace",
-        born: 1815
-      })
-      .then(function(docRef) {
-        console.log("Document written with ID: ", docRef.id);
-      })
-      .catch(function(error) {
-        console.error("Error adding document: ", error);
-      });
 
       // Initialize the FirebaseUI Widget using Firebase.
       var auth = firebase.auth();
       auth.onAuthStateChanged(function(user) {
-        document.getElementById('auth').style.display = user ? 'none' : 'block';
-        document.getElementById('main').style.display = user ? 'block' : 'none';
+        if (user != null) {
+          document.getElementById('auth').style.display = 'none';
+          document.getElementById('main').style.display = 'block';
+
+          db.doc("users/" + user.uid).collection("links").add({
+            site: "Google",
+            url: "https://google.com"
+          })
+          .then(function(docRef) {
+            console.log("Document written with ID: ", docRef.id);
+          })
+          .catch(function(error) {
+            console.error("Error adding document: ", error);
+          });
+
+          var dbdiv = document.getElementById('db')
+          dbdiv.style.display = 'block';
+          db.doc("users/" + user.uid).collection('links').get().then(function(snapshot) {
+            snapshot.forEach(function(doc) {
+              console.log(doc.data())
+              var child = document.createTextNode(doc.data().site);
+              dbdiv.appendChild(child);
+            });
+          });
+        } else {
+          document.getElementById('auth').style.display = 'block';
+          document.getElementById('main').style.display = 'none';
+          document.getElementById('db').style.display = 'none';
+        }
       });
 
       var ui = new firebaseui.auth.AuthUI(auth);
